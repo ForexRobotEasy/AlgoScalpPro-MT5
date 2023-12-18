@@ -1,0 +1,105 @@
+
+// AlgoScalpPro MT5
+// Developer: Forex Robot Easy Team
+// Developer's Site: forexroboteasy.com
+
+// Include necessary libraries
+#include <Trade\Trade.mqh>
+#include <Trade\PositionInfo.mqh>
+#include <Trade\SymbolInfo.mqh>
+
+// Define global variables
+CTrade trade; // Trade object for executing trades
+CPositionInfo positionInfo; // PositionInfo object for retrieving position information
+CSymbolInfo symbolInfo; // SymbolInfo object for retrieving symbol information
+
+// Function to check if FIFO rules are being followed
+bool isFIFOCompliant()
+{
+    if (positionInfo.Total() > 1)
+    {
+        CPositionInfo::CIterator position = positionInfo.GetFirst();
+        while (position)
+        {
+            if (position.Symbol() != positionInfo.Symbol())
+                return false;
+            
+            position = position.Next();
+        }
+    }
+    
+    return true;
+}
+
+// Function to increase lot size for recovery
+double increaseLotSize(double lotSize)
+{
+    return lotSize * 2;
+}
+
+// Main function for executing the scalping strategy
+void OnTick()
+{
+    // Check if FIFO rules are being followed
+    if (!isFIFOCompliant())
+    {
+        Print('FIFO rules violation! Exiting...');
+        return;
+    }
+    
+    // Retrieve symbol information
+    symbolInfo.Refresh();
+    
+    // Implement your scalping strategy here
+    // ...
+    // ...
+    
+    // Execute trades based on the strategy
+    if (trade.Buy(symbolInfo.Ask(), symbolInfo.Point(), lotSize, 'Buy order'))
+    {
+        // Trade executed successfully
+        // Implement recovery function to increase lot size once
+        lotSize = increaseLotSize(lotSize);
+    }
+    else if (trade.Sell(symbolInfo.Bid(), symbolInfo.Point(), lotSize, 'Sell order'))
+    {
+        // Trade executed successfully
+        // Implement recovery function to increase lot size once
+        lotSize = increaseLotSize(lotSize);
+    }
+    else
+    {
+        // Trade execution failed
+        Print('Trade execution failed! Exiting...');
+        return;
+    }
+}
+
+// Initialization function
+int OnInit()
+{
+    // Initialize position info and symbol info objects
+    positionInfo.Initialize(_Symbol);
+    symbolInfo.Name(_Symbol);
+    
+    return(INIT_SUCCEEDED);
+}
+
+// Deinitialization function
+void OnDeinit(const int reason)
+{
+    // Deinitialize position info and symbol info objects
+    positionInfo.Deinitialize();
+    symbolInfo.Deinit();
+}
+
+// Entry point of the program
+void OnStart()
+{
+    // Run the scalping strategy on every tick
+    while (!IsStopped())
+    {
+        OnTick();
+        Sleep(100); // Sleep for 100 milliseconds before executing next tick
+    }
+}
